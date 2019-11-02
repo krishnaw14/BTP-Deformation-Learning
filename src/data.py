@@ -2,13 +2,14 @@ from torchvision.datasets import ImageFolder
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-def get_data_loader(config):
+def get_image_folder_data_loader(config):
 	data_path = config.data_path
 
 	dataset = ImageFolder(root=data_path, transform=transforms.Compose([
+		transforms.Resize(config.img_size),
 		transforms.CenterCrop(config.img_size),
-		transforms.Normalize((0.5*255, 0.5*255, 0.5*255), (0.5*255, 0.5*255, 0.5*255)),
 		transforms.ToTensor(),
+		transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
 		])
 	)
 

@@ -1,6 +1,9 @@
 import torch 
 import torch.nn as nn 
 
+def langevin_dynamics_generator(z_app, z_geo=None):
+	pass
+
 class GeneratorAppearance(nn.Module):
 
 	def __init__(self, config):
@@ -22,7 +25,7 @@ class GeneratorAppearance(nn.Module):
 			stride = config.strides[i]
 			pad = config.pads[i]
 
-			layer = nn.ConvTranspose2D(in_channels, out_channels, kernel_size, stride, pad)
+			layer = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, pad)
 			self.layer_conv.append(layer)
 			if i == config.conv_layers-1:
 				self.layer_conv.append(nn.Sigmoid())
@@ -31,6 +34,7 @@ class GeneratorAppearance(nn.Module):
 		self.layer_conv = nn.Sequential(*self.layer_conv)
 
 	def forward(self, z):
-		out = self.layer_fc(z).view(-1, self.image_size // 16, self.image_size // 16, 80)
+		out = self.layer_fc(z).view(-1, 80, self.img_size // 16, self.img_size // 16)
+		# import pdb; pdb.set_trace()
 		out = self.layer_conv(out)
 		return out
