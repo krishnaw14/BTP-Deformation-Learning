@@ -3,7 +3,7 @@ import os
 import numpy as np
 import torch
 
-from src.trainers import AppearanceGeneratorTrainer
+from src.trainers import Trainer
 import config
 
 # def get_args():
@@ -18,7 +18,7 @@ import config
 def main(args=None):
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-	trainer = AppearanceGeneratorTrainer(config, device)
+	trainer = Trainer(config, device)
 	trainer.train()
 	
 
