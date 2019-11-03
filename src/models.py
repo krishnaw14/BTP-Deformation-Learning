@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 
-from .utils import image_warp
+# from .utils import image_warp
 
 class GeneratorAppearance(nn.Module):
 
@@ -76,23 +76,45 @@ class GeneratorGeometry(nn.Module):
 
 class GeneratorDeform(nn.Module):
 
-	def __init__(self, config):
+	def __init__(self, config, device):
 		super(GeneratorDeform, self).__init__()
 
+		self.device = device
 		self.img_size = config.img_size
 		self.geo_scale = config.geo_scale
 
 		self.generator_appearance = GeneratorAppearance(config)
 		self.generator_geometry = GeneratorGeometry(config)
 
-	def forward(self, z_app, z_geo):
+		self.make_grid(config.batch_size)
+
+	def make_grid(self, batch_size):
+		x_t, y_t = torch.meshgrid(torch.linspace(-1, 1, 64), torch.linspace(-1, 1, 64))
+		grid = torch.cat((x_t.unsqueeze(0), y_t.unsqueeze(0)), dim=0)
+
+		self.grid = grid.unsqueeze(0).repeat(128, 1, 1, 1).to(self.device)
+
+	def image_warp(self, gen_app, gen_geo):
+
+		template = gen_app
+
+		grid_ = (self.grid+1)*self.img_size/2
+		deformation = gen_geo*self.geo_scale + grid_
+		deformation = torch.clamp(deformation, min=0, max=self.img_size)
+		deformation = 2*(deformation/self.img_size)-1
+
 		# import pdb; pdb.set_trace()
+
+		img_recon = F.grid_sample(template, deformation.permute(0,2,3,1))
+		return img_recon
+
+	def forward(self, z_app, z_geo):
 
 		gen_app = self.generator_appearance(z_app)
 		gen_geo = self.generator_geometry(z_geo)
 
 		# img_recon = image_warp(template=gen_app, deformation=gen_geo)
-		img_recon = F.grid_sample(gen_app, gen_geo.permute(0,2,3,1))
+		img_recon = self.image_warp(gen_app, gen_geo)
 
 		return gen_app, gen_geo, img_recon
 

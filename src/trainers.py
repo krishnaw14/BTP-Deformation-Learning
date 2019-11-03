@@ -16,7 +16,7 @@ class Trainer(object):
 
 	def __init__(self, config, device):
 
-		self.model = GeneratorDeform(config).to(device)
+		self.model = GeneratorDeform(config, device).to(device)
 		self.data_loader = get_image_folder_data_loader(config)
 
 		self.batch_size = config.batch_size
@@ -64,6 +64,7 @@ class Trainer(object):
 
 			loss = torch.sum((img-img_recon)**2)/self.sigma / self.sigma / self.batch_size
 			loss += (torch.sum(z_app**2) + torch.sum(z_geo**2))
+			loss *= 0.5
 
 			grad_app = autograd.grad(loss, z_app, retain_graph=True)[0]
 			z_app = z_app - 0.5 * self.step_size * self.step_size * grad_app + self.step_size * noise_app
@@ -96,13 +97,8 @@ class Trainer(object):
 
 				# Infer z
 				z_app_batch = z_app[batch_idx]
-				# import pdb; pdb.set_trace()
-				# if not z_app_batch.requires_grad:
-				# z_app_batch.requires_grad = True
 				z_geo_batch = z_geo[batch_idx]
-				# if not z_geo_batch.requires_grad:
-				# z_geo_batch.requires_grad = True
-				
+
 				z_app_batch_infer, z_geo_batch_infer = self.langevin_dynamics(img, z_app_batch, z_geo_batch)
 				with torch.no_grad():
 					z_app[batch_idx] = z_app_batch_infer
@@ -116,6 +112,7 @@ class Trainer(object):
 					self.save_params(epoch, 0.0)
 
 				loss = self.loss_func(img, img_recon)/self.sigma / self.sigma / 100
+				loss *= 0.5
 
 				self.optimizer.zero_grad()
 				loss.backward()
@@ -126,9 +123,6 @@ class Trainer(object):
 				epoch_loss += loss
 
 			print('Epoch Loss:', epoch_loss.item())
-
-			# if epoch %10 == 0 and epoch != 0:
-			# 	import pdb; pdb.set_trace()
 
 
 	def validate(self):

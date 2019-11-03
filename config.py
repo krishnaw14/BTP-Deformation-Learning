@@ -23,12 +23,12 @@ save_param_dir = "saved_models/"
 save_results_dir = "reconstructions/"
 
 #train
-num_epochs = 100
+num_epochs = 2000
 lr = 1e-5
 sigma= 0.15
-log_step = 1
-val_step = 1
-save_param_step = 1
+log_step = 5
+val_step = 5
+save_param_step = 5
 
 #data
 data_path = "data/"
