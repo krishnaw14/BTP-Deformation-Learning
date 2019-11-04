@@ -92,7 +92,7 @@ class GeneratorDeform(nn.Module):
 		x_t, y_t = torch.meshgrid(torch.linspace(-1, 1, 64), torch.linspace(-1, 1, 64))
 		grid = torch.cat((x_t.unsqueeze(0), y_t.unsqueeze(0)), dim=0)
 
-		self.grid = grid.unsqueeze(0).repeat(128, 1, 1, 1).to(self.device)
+		self.grid = grid.unsqueeze(0).repeat(batch_size, 1, 1, 1).to(self.device)
 
 	def image_warp(self, gen_app, gen_geo):
 
@@ -117,6 +117,109 @@ class GeneratorDeform(nn.Module):
 		img_recon = self.image_warp(gen_app, gen_geo)
 
 		return gen_app, gen_geo, img_recon
+
+class EncoderAppearance(nn.Module):
+
+	def __init__(self, config):
+		self.img_size = config.img_size
+		self.z_dim = config.z_dim_app
+
+		self.layer_conv = nn.ModuleList()
+		for i in range(config.conv_layers_app):
+
+			in_channels = config.channels_app[config.conv_layers_app -1 -i] 
+			out_channels = config.channels_app[config.conv_layers_app -2 -i] if i != config.conv_layers_app-1 else config.channels_app[-1]*2
+			kernel_size = config.kernel_sizes_app[i]
+			stride = config.strides_app[i]
+			pad = config.pads_app[i]
+
+			layer = nn.Conv2d(in_channels, out_channels, kernel_size, stride, pad)
+			self.layer_conv.append(layer)
+			if i == config.conv_layers_geo-1:
+				self.layer_conv.append(nn.Sigmoid())
+			else:
+				self.layer_conv.append(nn.ReLU())
+		self.layer_conv = nn.Sequential(*self.layer_conv)
+
+		self.layer_fc = nn.Sequential(
+			nn.Linear((self.img_size // 16) * (self.img_size // 16) * config.channels_app[0]*2, 2*self.z_dim),
+			nn.ReLU(),
+			)
+
+	def forward(self, img):
+
+		import pdb; pdb.set_trace()
+		out = self.layer_conv(img)
+		out = self.layer_fc(out.view(-1,))
+
+		mu = out[:,0]
+		logsigma = out[:,1]
+
+		return mu, logsigma
+
+class EncoderGeometry(nn.Module):
+
+	def __init__(self, config):
+		self.img_size = config.img_size
+		self.z_dim = config.z_dim_geo
+
+		self.layer_conv = nn.ModuleList()
+		for i in range(config.conv_layers_geo):
+
+			in_channels = config.channels_geo[config.conv_layers_geo -1 -i] 
+			out_channels = config.channels_geo[config.conv_layers_geo -2 -i] if i != config.conv_layers_geo-1 else config.channels_geo[-1]*2
+			kernel_size = config.kernel_sizes_geo[i]
+			stride = config.strides_geo[i]
+			pad = config.pads_geo[i]
+
+			layer = nn.Conv2d(in_channels, out_channels, kernel_size, stride, pad)
+			self.layer_conv.append(layer)
+			if i == config.conv_layers_geo-1:
+				self.layer_conv.append(nn.Sigmoid())
+			else:
+				self.layer_conv.append(nn.ReLU())
+		self.layer_conv = nn.Sequential(*self.layer_conv)
+
+		self.layer_fc = nn.Sequential(
+			nn.Linear((self.img_size // 16) * (self.img_size // 16) * config.channels_geo[0]*2, 2*self.z_dim),
+			nn.ReLU(),
+			)
+
+	def forward(self, img):
+		out = self.layer_conv(img)
+		out = self.layer_fc(out.view(-1,))
+
+		mu = out[:,0]
+		logsigma = out[:,1]
+
+		return mu, logsigma
+
+class VAEDeform(nn.Module):
+
+	def __init__(self, config, device):
+		super(VAEDeform, self).__init__()
+
+		self.img_size = config.img_size
+
+		self.decoder = GeneratorDeform(config, device)
+
+		self.encoder_app = EncoderAppearance(config)
+		self.encoder_geo = EncoderGeometry(config)
+
+	def reparameterize(self, mu, logsigma):
+		pass
+
+	def forward(self, img):
+		mu_app, logsigma_app = self.encoder_app(img)
+		z_app = reparameterize(mu_app, logsigma_app)
+
+		mu_geo, logsigma_geo = self.encoder_app(img)
+		z_geo = reparameterize(mu_geo, logsigma_geo)
+
+		gen_app, gen_geo, img_recon = self.decoder(z_app, z_geo)
+
+		return z_app, z_geo, gen_app, gen_geo, img_recon
+
 
 
 

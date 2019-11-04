@@ -6,12 +6,14 @@ def get_image_folder_data_loader(config):
 	data_path = config.data_path
 
 	dataset = ImageFolder(root=data_path, transform=transforms.Compose([
-		transforms.CenterCrop(96),
-		transforms.Resize(config.img_size),
+		# transforms.CenterCrop(96),
+		transforms.Resize((config.img_size, config.img_size)),
 		transforms.ToTensor(),
-		transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+		transforms.Normalize((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)),
 		])
 	)
 
-	data_loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=8)
+	# import pdb; pdb.set_trace()
+
+	data_loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=False, num_workers=8)
 	return data_loader

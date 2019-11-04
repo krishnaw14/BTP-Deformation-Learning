@@ -16,7 +16,7 @@ class Trainer(object):
 
 	def __init__(self, config, device):
 
-		self.model = GeneratorDeform(config, device).to(device)
+		self.model = VAEDeform(config, device).to(device)
 		self.data_loader = get_image_folder_data_loader(config)
 
 		self.batch_size = config.batch_size
@@ -54,32 +54,7 @@ class Trainer(object):
 		self.model.load_state_dict(checkpoint['model_state_dict'])
 		self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-	def langevin_dynamics(self, img, z_app, z_geo):
-		
-		for i in range(self.sampling_step):
-			noise_app = torch.randn_like(z_app)
-			noise_geo = torch.randn_like(z_geo)
-
-			gen_app, gen_geo, img_recon = self.model(z_app, z_geo)
-
-			loss = torch.sum((img-img_recon)**2)/self.sigma / self.sigma / self.batch_size
-			loss += (torch.sum(z_app**2) + torch.sum(z_geo**2))
-			loss *= 0.5
-
-			grad_app = autograd.grad(loss, z_app, retain_graph=True)[0]
-			z_app = z_app - 0.5 * self.step_size * self.step_size * grad_app + self.step_size * noise_app
-
-			grad_geo = autograd.grad(loss, z_geo, retain_graph=False)[0]
-			z_geo = z_geo - 0.5 * self.step_size * self.step_size * grad_geo + self.step_size * noise_geo
-
-		return z_app, z_geo
-
 	def train(self):
-
-		z_app = torch.randn(len(self.data_loader.dataset), self.model.generator_appearance.z_dim).to(self.device)
-		z_app.requires_grad = True
-		z_geo = torch.randn(len(self.data_loader.dataset), self.model.generator_geometry.z_dim).to(self.device)
-		z_geo.requires_grad = True
 
 		for epoch in range(self.num_epochs):
 			epoch_loss = 0.0
@@ -90,30 +65,20 @@ class Trainer(object):
 				# import pdb; pdb.set_trace()
 
 				img = data[0].to(self.device)
-				batch_idx = torch.arange(nbatch * self.batch_size, min((nbatch+1) * self.batch_size, len(self.data_loader.dataset) ))
 
 				if len(batch_idx) != self.batch_size:
 					continue
 
 				# Infer z
-				z_app_batch = z_app[batch_idx]
-				z_geo_batch = z_geo[batch_idx]
+				z_app, z_geo, gen_app, gen_geo, img_recon = self.model(img)
 
-				z_app_batch_infer, z_geo_batch_infer = self.langevin_dynamics(img, z_app_batch, z_geo_batch)
-				with torch.no_grad():
-					z_app[batch_idx] = z_app_batch_infer
-					z_geo[batch_idx] = z_geo_batch_infer
-
-				# Update Model Weights
-				gen_app, gen_geo, img_recon = self.model(z_app_batch_infer, z_geo_batch_infer)
+				loss = 0.5*self.loss_func(img, img_recon)/self.sigma / self.sigma
+				kld = 
+				loss += kld
 
 				if epoch%self.log_step == 0 and nbatch == 0:
 					self.save_results(epoch, img, img_recon, gen_app, gen_geo)
 					self.save_params(epoch, 0.0)
-
-				# import pdb; pdb.set_trace()
-				loss = self.loss_func(img, img_recon)/self.sigma / self.sigma / 100
-				loss *= 0.5
 
 				self.optimizer.zero_grad()
 				loss.backward()
