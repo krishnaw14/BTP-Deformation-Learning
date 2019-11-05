@@ -24,9 +24,10 @@ class GeneratorAppearance(nn.Module):
 			out_channels = config.channels_app[i]
 			kernel_size = config.kernel_sizes_app[i]
 			stride = config.strides_app[i]
-			pad = config.pads_app[i]
+			padding = config.pads_app[i]
+			output_padding = config.output_pad_app[i]
 
-			layer = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, pad)
+			layer = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, output_padding)
 			self.layer_conv.append(layer)
 			if i == config.conv_layers_app-1:
 				self.layer_conv.append(nn.Sigmoid())
@@ -35,6 +36,7 @@ class GeneratorAppearance(nn.Module):
 		self.layer_conv = nn.Sequential(*self.layer_conv)
 
 	def forward(self, z):
+
 		out = self.layer_fc(z).view(-1, 80, self.img_size // 16, self.img_size // 16)
 		out = self.layer_conv(out)
 		return out
@@ -59,9 +61,10 @@ class GeneratorGeometry(nn.Module):
 			out_channels = config.channels_geo[i]
 			kernel_size = config.kernel_sizes_geo[i]
 			stride = config.strides_geo[i]
-			pad = config.pads_geo[i]
+			padding = config.pads_geo[i]
+			output_padding = config.output_pad_geo[i]
 
-			layer = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, pad)
+			layer = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, output_padding)
 			self.layer_conv.append(layer)
 			if i == config.conv_layers_geo-1:
 				self.layer_conv.append(nn.Tanh())
@@ -70,6 +73,7 @@ class GeneratorGeometry(nn.Module):
 		self.layer_conv = nn.Sequential(*self.layer_conv)
 
 	def forward(self, z):
+		# import pdb; pdb.set_trace()
 		out = self.layer_fc(z).view(-1, 128, self.img_size // 16, self.img_size // 16)
 		out = self.layer_conv(out)
 		return out
@@ -112,6 +116,8 @@ class GeneratorDeform(nn.Module):
 
 		gen_app = self.generator_appearance(z_app)
 		gen_geo = self.generator_geometry(z_geo)
+
+		# import pdb; pdb.set_trace()
 
 		# img_recon = image_warp(template=gen_app, deformation=gen_geo)
 		img_recon = self.image_warp(gen_app, gen_geo)

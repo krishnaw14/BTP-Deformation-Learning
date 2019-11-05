@@ -25,6 +25,7 @@ class Trainer(object):
 		self.step_size = config.step_size
 
 		self.optimizer = torch.optim.Adam(self.model.parameters(), lr = config.lr)
+		self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size = config.lr_step_size, gamma=config.lr_gamma)
 		self.num_epochs = config.num_epochs
 		self.save_param_step = config.save_param_step
 		self.log_step = config.log_step
@@ -81,6 +82,8 @@ class Trainer(object):
 		z_geo = torch.randn(len(self.data_loader.dataset), self.model.generator_geometry.z_dim).to(self.device)
 		z_geo.requires_grad = True
 
+		epoch_loss_values = []
+
 		for epoch in range(self.num_epochs):
 			epoch_loss = 0.0
 			pbar = tqdm(enumerate(self.data_loader), desc = 'training batch_loss', 
@@ -124,6 +127,10 @@ class Trainer(object):
 				epoch_loss += loss
 
 			print('Epoch Loss:', epoch_loss.item())
+			self.lr_scheduler.step()
+			epoch_loss_values.append(epoch_loss.cpu().item())
+
+		import pdb; pdb.set_trace()
 
 
 	def validate(self):
