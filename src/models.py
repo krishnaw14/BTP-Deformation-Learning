@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 
-# from .utils import image_warp
+from .utils import image_warp_custom
 
 class GeneratorAppearance(nn.Module):
 
@@ -119,8 +119,8 @@ class GeneratorDeform(nn.Module):
 
 		# import pdb; pdb.set_trace()
 
-		# img_recon = image_warp(template=gen_app, deformation=gen_geo)
-		img_recon = self.image_warp(gen_app, gen_geo)
+		img_recon = image_warp_custom(template=gen_app, deformation=self.geo_scale*gen_geo, device=self.device)
+		# img_recon = self.image_warp(gen_app, gen_geo)
 
 		return gen_app, gen_geo, img_recon
 

@@ -21,8 +21,8 @@ pads_geo = [1, 1, 2, 2]
 output_pad_geo = [1, 1, 1, 1]
 
 #dir
-save_param_dir = "saved_models_limit/"
-save_results_dir = "reconstructions_limit/"
+save_param_dir = "saved_models_warp/"
+save_results_dir = "reconstructions_warp/"
 
 #train
 num_epochs = 1000

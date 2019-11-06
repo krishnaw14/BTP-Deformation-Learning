@@ -12,11 +12,12 @@ from .models import *
 from .utils import *
 from .data import *
 
-class Trainer(object):
+class InverseTrainer(object):
 
 	def __init__(self, config, device):
 
 		self.model = GeneratorDeform(config, device).to(device)
+		self.inverse_model = GeneratorGeometry(config)
 		self.data_loader = get_image_folder_data_loader(config)
 
 		self.batch_size = config.batch_size
@@ -55,7 +56,7 @@ class Trainer(object):
 		self.model.load_state_dict(checkpoint['model_state_dict'])
 		self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-	def langevin_dynamics(self, img, z_app, z_geo):
+	def langevin_dynamics(self, img, z_app, z_geo=None):
 		
 		for i in range(self.sampling_step):
 			noise_app = torch.randn_like(z_app)
@@ -63,15 +64,12 @@ class Trainer(object):
 
 			gen_app, gen_geo, img_recon = self.model(z_app, z_geo)
 
-			loss = torch.sum((img-img_recon)**2)/self.sigma / self.sigma / self.batch_size 
-			loss += (torch.sum(z_app**2) + torch.sum(z_geo**2))
+			loss = torch.sum((gen_app-img_recon)**2)/self.sigma / self.sigma / self.batch_size
+			loss += torch.sum(z_app**2) 
 			loss *= 0.5
 
 			grad_app = autograd.grad(loss, z_app, retain_graph=True)[0]
 			z_app = z_app - 0.5 * self.step_size * self.step_size * grad_app + self.step_size * noise_app
-
-			grad_geo = autograd.grad(loss, z_geo, retain_graph=False)[0]
-			z_geo = z_geo - 0.5 * self.step_size * self.step_size * grad_geo + self.step_size * noise_geo
 
 		return z_app, z_geo
 
@@ -107,15 +105,13 @@ class Trainer(object):
 					z_app[batch_idx] = z_app_batch_infer
 					z_geo[batch_idx] = z_geo_batch_infer
 
-				# Update Model Weights
 				gen_app, gen_geo, img_recon = self.model(z_app_batch_infer, z_geo_batch_infer)
 
 				if epoch%self.log_step == 0 and nbatch == 0:
 					self.save_results(epoch, img, img_recon, gen_app, gen_geo)
 					self.save_params(epoch, 0.0)
 
-				# import pdb; pdb.set_trace()
-				loss = self.loss_func(img, img_recon)/self.sigma / self.sigma 
+				loss = self.loss_func(img, gen_app)/self.sigma / self.sigma 
 				loss *= 0.5
 
 				self.optimizer.zero_grad()
@@ -132,14 +128,8 @@ class Trainer(object):
 
 		import pdb; pdb.set_trace()
 
-
-	def validate(self):
-		pass
-
 	def save_results(self, epoch, img, img_recon, gen_app, gen_geo):
 		save_image(img, os.path.join(self.save_results_dir, 'original_epoch_{}.png'.format(epoch)), nrow=8, normalize=True)
 		save_image(img_recon, os.path.join(self.save_results_dir, 'recon_epoch_{}.png'.format(epoch)), nrow=8, normalize=True)
 		save_image(gen_app, os.path.join(self.save_results_dir, 'app_epoch_{}.png'.format(epoch)), nrow=8, normalize=True)
-		# save_image(gen_geo, os.path.join(self.save_results_dir, 'geo_epoch_{}.png'.format(epoch)), nrow=8, normalize=True)
-
 
