@@ -3,8 +3,8 @@
 ## Work To Do:
 
 - [x] Appearance Generator
-- [ ] Appearance Generator with Langevin Dynamics
-- [ ] Appearance Generator + Deformation Generator
+- [x] Appearance Generator with Langevin Dynamics
+- [x] Appearance Generator + Deformation Generator
 - [ ] Learn Inverse Deformation Model
 - [ ] Learn both the mapping together
 - [ ] Adversarial Training
