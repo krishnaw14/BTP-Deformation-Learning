@@ -5,9 +5,11 @@
 - [x] Appearance Generator
 - [x] Appearance Generator with Langevin Dynamics
 - [x] Appearance Generator + Deformation Generator
-- [ ] Learn Inverse Deformation Model
-- [ ] Learn both the mapping together
+
+- [ ] Transpose Issue
+- [ ] Smoothness Constraint
 - [ ] Adversarial Training
+- [ ] Langevin Dynamics Alternatives
 
 ## References
 
