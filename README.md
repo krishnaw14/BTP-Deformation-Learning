@@ -10,6 +10,8 @@
 - [ ] Smoothness Constraint
 - [ ] Adversarial Training
 - [ ] Langevin Dynamics Alternatives
+- [ ] Report
+- [ ] Presentation
 
 ## References
 
