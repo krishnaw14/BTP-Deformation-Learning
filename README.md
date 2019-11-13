@@ -10,8 +10,8 @@
 - [ ] Smoothness Constraint
 - [ ] Adversarial Training
 - [ ] Langevin Dynamics Alternatives
-- [ ] Report
-- [ ] Presentation
+- [ ] Report (Deadline: 23 November)
+- [ ] Presentation (Deadline: 24 November)
 
 ## References
 
