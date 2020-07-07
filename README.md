@@ -1,17 +1,6 @@
-# BTP
+# Experiments on Deformation based Generative Models for images
 
-## Work To Do:
-
-- [x] Appearance Generator
-- [x] Appearance Generator with Langevin Dynamics
-- [x] Appearance Generator + Deformation Generator
-
-- [ ] Transpose Issue
-- [ ] Smoothness Constraint
-- [ ] Adversarial Training
-- [ ] Langevin Dynamics Alternatives
-- [ ] Report (Deadline: 23 November)
-- [ ] Presentation (Deadline: 24 November)
+Work continued in other repositories
 
 ## References
 
